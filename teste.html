@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Presença</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h2 class="text-center">Registro de Presença</h2>
+        
+        <!-- Seleção de Turma -->
+        <div class="mb-3">
+            <label for="selectTurma" class="form-label">Selecione a Turma</label>
+            <select id="selectTurma" class="form-select">
+                <option value="">Escolha uma turma</option>
+                <!-- Turmas serão carregadas aqui via JavaScript -->
+            </select>
+        </div>
+
+        <!-- Seleção de Disciplina -->
+        <div class="mb-3">
+            <label for="selectDisciplina" class="form-label">Selecione a Disciplina</label>
+            <select id="selectDisciplina" class="form-select" disabled>
+                <option value="">Escolha uma disciplina</option>
+                <!-- Disciplinas serão carregadas aqui via JavaScript -->
+            </select>
+        </div>
+
+        <!-- Tabela de Alunos -->
+        <div id="alunosContainer" style="display: none;">
+            <h3>Alunos</h3>
+            <form id="presencaForm">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Aluno</th>
+                            <th>Presente</th>
+                            <th>Ausente</th>
+                        </tr>
+                    </thead>
+                    <tbody id="alunosTableBody">
+                        <!-- Alunos serão carregados aqui via JavaScript -->
+                    </tbody>
+                </table>
+                <div class="mb-3">
+                    <label for="dataFalta" class="form-label">Data</label>
+                    <input type="date" id="dataFalta" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Salvar Presença</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            const professorId = 2; // ID do professor fixo para exemplo
+            const apiUrl = 'http://127.0.0.1:3000'; // URL base do backend
+
+            // Carregar turmas
+            $.getJSON(`${apiUrl}/turmas/${professorId}`, function (turmas) {
+                console.log('Turmas recebidas:', turmas); // Log para verificar a resposta
+                if (turmas.length === 0) {
+                    $('#selectTurma').append('<option value="">Nenhuma turma encontrada</option>');
+                } else {
+                    turmas.forEach(turma => {
+                        $('#selectTurma').append(`<option value="${turma.id_turma}">${turma.nome_turma}</option>`);
+                    });
+                }
+            }).fail(function (jqXHR, textStatus, errorThrown) {
+                console.error('Erro ao carregar turmas:', textStatus, errorThrown); // Log de erro
+                $('#selectTurma').append('<option value="">Erro ao carregar turmas</option>');
+            });
+
+            // Carregar disciplinas ao selecionar uma turma
+            $('#selectTurma').change(function () {
+                const turmaId = $(this).val();
+                if (turmaId) {
+                    $('#selectDisciplina').prop('disabled', false);
+                    $.getJSON(`${apiUrl}/disciplinas/${professorId}/${turmaId}`, function (disciplinas) {
+                        console.log('Disciplinas recebidas:', disciplinas); // Log para verificar a resposta
+                        $('#selectDisciplina').empty().append('<option value="">Escolha uma disciplina</option>');
+                        disciplinas.forEach(disciplina => {
+                            $('#selectDisciplina').append(`<option value="${disciplina.id_disciplina}">${disciplina.disciplina}</option>`);
+                        });
+                    }).fail(function (jqXHR, textStatus, errorThrown) {
+                        console.error('Erro ao carregar disciplinas:', textStatus, errorThrown); // Log de erro
+                        $('#selectDisciplina').empty().append('<option value="">Erro ao carregar disciplinas</option>');
+                    });
+                } else {
+                    $('#selectDisciplina').prop('disabled', true).empty().append('<option value="">Escolha uma disciplina</option>');
+                    $('#alunosContainer').hide();
+                }
+            });
+
+            // Carregar alunos ao selecionar uma disciplina
+            $('#selectDisciplina').change(function () {
+                const turmaId = $('#selectTurma').val();
+                const disciplinaId = $(this).val();
+                if (disciplinaId) {
+                    $.getJSON(`${apiUrl}/alunos/${turmaId}/${disciplinaId}`, function (alunos) {
+                        console.log('Alunos recebidos:', alunos); // Log para verificar a resposta
+                        $('#alunosTableBody').empty();
+                        alunos.forEach(aluno => {
+                            $('#alunosTableBody').append(`
+                                <tr>
+                                    <td>${aluno.nome_aluno}</td>
+                                    <td>
+                                        <input type="radio" name="presente_${aluno.id_aluno}" value="true" required>
+                                    </td>
+                                    <td>
+                                        <input type="radio" name="presente_${aluno.id_aluno}" value="false" required>
+                                    </td>
+                                </tr>
+                            `);
+                        });
+                        $('#alunosContainer').show();
+                    }).fail(function (jqXHR, textStatus, errorThrown) {
+                        console.error('Erro ao carregar alunos:', textStatus, errorThrown); // Log de erro
+                        $('#alunosTableBody').empty().append('<tr><td colspan="3">Erro ao carregar alunos</td></tr>');
+                        $('#alunosContainer').hide();
+                    });
+                } else {
+                    $('#alunosContainer').hide();
+                }
+            });
+
+            // Enviar formulário de presença
+            $('#presencaForm').submit(function (e) {
+                e.preventDefault();
+
+                const disciplinaId = $('#selectDisciplina').val();
+                const dataFalta = $('#dataFalta').val();
+                const alunos = [];
+
+                $('#alunosTableBody tr').each(function () {
+                    const idAluno = $(this).find('input[type="radio"]').attr('name').split('_')[1];
+                    const presente = $(this).find('input[type="radio"]:checked').val() === "true";
+                    alunos.push({ id_aluno: idAluno, presente });
+                });
+
+                $.ajax({
+                    url: `${apiUrl}/registrar-presenca`,
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ id_disciplina: disciplinaId, alunos, data_falta: dataFalta }),
+                    success: function () {
+                        alert('Presença registrada com sucesso!');
+                    },
+                    error: function () {
+                        alert('Erro ao registrar presença.');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

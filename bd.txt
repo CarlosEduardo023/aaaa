@@ -1,0 +1,84 @@
+
+
+CREATE TABLE Turma (
+    id_turma INT AUTO_INCREMENT PRIMARY KEY,
+    nome_turma VARCHAR(255),
+    ano YEAR,
+    semestre INT
+);
+
+CREATE TABLE Aluno (
+    id_aluno INT AUTO_INCREMENT PRIMARY KEY,
+    nome_aluno VARCHAR(255),
+    cpf_aluno VARCHAR(11),
+    endereco_aluno VARCHAR(255),
+    telefone_aluno VARCHAR(255),
+    email_aluno VARCHAR(128),
+    nascimento_aluno DATE,
+    ra_aluno VARCHAR(255),
+    data_matricula DATE,
+    foto VARCHAR(255),
+    senha VARCHAR(255),
+    id_turma INT,
+    FOREIGN KEY (id_turma) REFERENCES Turma(id_turma)
+);
+
+CREATE TABLE Professor (
+    id_prof INT AUTO_INCREMENT PRIMARY KEY,
+    nome_prof VARCHAR(255),
+    cpf_prof VARCHAR(11) UNIQUE,
+    telefone_prof VARCHAR(255),
+    email_consti_prof VARCHAR(128) UNIQUE,
+    email_prof VARCHAR(128) UNIQUE,
+    nascimento_prof DATE,
+    endereco_prof VARCHAR(128),
+    senha VARCHAR(255),
+    nivel INT
+);
+
+CREATE TABLE Disciplina (
+    id_disciplina INT AUTO_INCREMENT PRIMARY KEY,
+    disciplina VARCHAR(255),
+    horario INT
+);
+
+CREATE TABLE Aluno_disciplina (
+    id_aluno_disc INT AUTO_INCREMENT PRIMARY KEY,
+    id_aluno INT,
+    id_disciplina INT,
+    FOREIGN KEY (id_aluno) REFERENCES Aluno(id_aluno),
+    FOREIGN KEY (id_disciplina) REFERENCES Disciplina(id_disciplina)
+);
+
+CREATE TABLE Faltas (
+    id_falta INT AUTO_INCREMENT PRIMARY KEY,
+    id_disciplina INT,
+    id_aluno INT,
+    data_falta DATE, -- Coluna para registrar a data da falta ou presença
+    presente BOOLEAN, -- Coluna para registrar se o aluno estava presente ou ausente
+    academic_year YEAR,
+    FOREIGN KEY (id_disciplina) REFERENCES Disciplina(id_disciplina),
+    FOREIGN KEY (id_aluno) REFERENCES Aluno(id_aluno),
+    UNIQUE(id_aluno, id_disciplina, data_falta) -- Garante que o aluno tenha apenas um registro por disciplina em uma data específica
+);
+
+
+CREATE TABLE Prof_Disciplina (
+    id_prof_disc INT AUTO_INCREMENT PRIMARY KEY,
+    id_prof INT,
+    id_disciplina INT,
+    FOREIGN KEY (id_prof) REFERENCES Professor(id_prof),
+    FOREIGN KEY (id_disciplina) REFERENCES Disciplina(id_disciplina)
+);
+
+CREATE TABLE Turma_Disciplina (
+    id_turma_disc INT AUTO_INCREMENT PRIMARY KEY,
+    id_turma INT,
+    id_disciplina INT,
+    FOREIGN KEY (id_turma) REFERENCES Turma(id_turma),
+    FOREIGN KEY (id_disciplina) REFERENCES Disciplina(id_disciplina)
+);
+
+--------------------
+
+npm install cors express mysql bodyParser

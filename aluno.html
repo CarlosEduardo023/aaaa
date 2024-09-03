@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minhas Faltas - Aluno</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container">
+        <h2 class="mt-5">Minhas Faltas</h2>
+        <ul id="faltasList" class="list-group">
+            <!-- Faltas aparecerão aqui -->
+        </ul>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Função para carregar faltas do aluno
+        function carregarFaltas() {
+            const aluno_id = 1; // Id do aluno logado (substituir pelo valor dinâmico)
+            fetch(`/faltas/${aluno_id}`)
+                .then(response => response.json())
+                .then(data => {
+                    const faltasList = document.getElementById('faltasList');
+                    faltasList.innerHTML = '';
+
+                    data.forEach(falta => {
+                        const listItem = document.createElement('li');
+                        listItem.className = 'list-group-item';
+                        listItem.textContent = `${falta.data} - ${falta.disciplina}`;
+                        faltasList.appendChild(listItem);
+                    });
+                });
+        }
+
+        // Carrega as faltas ao carregar a página
+        document.addEventListener('DOMContentLoaded', carregarFaltas);
+    </script>
+</body>
+
+</html>
